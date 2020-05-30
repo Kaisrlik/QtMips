@@ -71,7 +71,7 @@ ProgramLoader::ProgramLoader(const char *file) {
         throw QTMIPS_EXCEPTION(Input, "Invalid input file type", "");
     // Check elf file architecture, of course only mips is supported.
     // Note: This also checks that this is big endian as EM_MIPS is suppose to be: MIPS R3000 big-endian
-    if (this->hdr.e_machine != EM_MIPS)
+    if (this->hdr.e_machine != EM_MIPS && this->hdr.e_machine != EM_RISCV)
         throw QTMIPS_EXCEPTION(Input, "Invalid input file architecture", "");
     // Check elf file class, only 32bit architecture is supported.
     int elf_class;
