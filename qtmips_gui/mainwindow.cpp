@@ -442,7 +442,6 @@ void MainWindow::set_speed() {
 }
 
 void MainWindow::view_mnemonics_registers(bool enable) {
-    machine::Instruction::set_symbolic_registers(enable);
     if (program == nullptr)
         return;
     program->request_update_all();
