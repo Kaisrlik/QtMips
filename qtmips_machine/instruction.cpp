@@ -1,3 +1,4 @@
+// vim: set expandtab:
 // SPDX-License-Identifier: GPL-2.0+
 /*******************************************************************************
  * QtMips - MIPS 32-bit Architecture Subset Simulator
@@ -48,32 +49,6 @@
 
 using namespace machine;
 
-#define IMF_SUB_ENCODE(bits, shift) (((bits) << 8) | (shift))
-#define IMF_SUB_GET_BITS(subcode) (((subcode) >> 8) & 0xff)
-#define IMF_SUB_GET_SHIFT(subcode) ((subcode) & 0xff)
-
-#define RS_SHIFT 21
-#define RT_SHIFT 16
-#define RD_SHIFT 11
-#define SHAMT_SHIFT 6
-
-#define FIELD_RS        IMF_SUB_ENCODE(5, RS_SHIFT)
-#define FIELD_RT        IMF_SUB_ENCODE(5, RT_SHIFT)
-#define FIELD_RD        IMF_SUB_ENCODE(5, RD_SHIFT)
-#define FIELD_SHAMT     IMF_SUB_ENCODE(5, SHAMT_SHIFT)
-#define FIELD_IMMEDIATE IMF_SUB_ENCODE(16, 0)
-#define FIELD_DELTA     IMF_SUB_ENCODE(16, 0)
-#define FIELD_TARGET    IMF_SUB_ENCODE(26, 0)
-#define FIELD_COPZ      IMF_SUB_ENCODE(25, 0)
-#define FIELD_CODE      IMF_SUB_ENCODE(10,16)
-#define FIELD_PREFX     IMF_SUB_ENCODE(5, 11)
-#define FIELD_CACHE     IMF_SUB_ENCODE(5, 16)
-#define FIELD_CODE2     IMF_SUB_ENCODE(10, 6)
-#define FIELD_CODE20    IMF_SUB_ENCODE(20, 6)
-#define FIELD_CODE19    IMF_SUB_ENCODE(19, 6)
-#define FIELD_SEL       IMF_SUB_ENCODE(3, 0)
-#define FIELD_IGNORE    0
-
 struct RegisterDesc {
     int kind;
     int number;
@@ -115,34 +90,6 @@ const RegisterDesc regbycode[] = {
     [31] = {0, 31, "ra"},
 };
 
-#define FLAGS_ALU_I_NO_RS (IMF_SUPPORTED | IMF_ALUSRC | IMF_REGWRITE)
-#define FLAGS_ALU_I (IMF_SUPPORTED | IMF_ALUSRC | IMF_REGWRITE | IMF_ALU_REQ_RS)
-#define FLAGS_ALU_I_ZE (FLAGS_ALU_I | IMF_ZERO_EXTEND)
-
-#define FLAGS_ALU_I_LOAD (IMF_SUPPORTED | IMF_ALUSRC | IMF_REGWRITE | \
-                          IMF_MEMREAD | IMF_MEM | IMF_ALU_REQ_RS)
-#define FLAGS_ALU_I_STORE (IMF_SUPPORTED | IMF_ALUSRC | IMF_MEMWRITE | \
-                          IMF_MEM | IMF_ALU_REQ_RS | IMF_ALU_REQ_RT)
-
-#define FLAGS_ALU_T_R_D (IMF_SUPPORTED | IMF_REGD | IMF_REGWRITE)
-#define FLAGS_ALU_T_R_STD (FLAGS_ALU_T_R_D | IMF_ALU_REQ_RS | IMF_ALU_REQ_RT)
-#define FLAGS_ALU_T_R_STD_SHV (FLAGS_ALU_T_R_STD | IMF_ALU_SHIFT)
-#define FLAGS_ALU_T_R_TD (FLAGS_ALU_T_R_D | IMF_ALU_REQ_RT)
-#define FLAGS_ALU_T_R_TD_SHAMT (FLAGS_ALU_T_R_TD | IMF_ALU_SHIFT)
-#define FLAGS_ALU_T_R_S (IMF_SUPPORTED |  IMF_ALU_REQ_RS)
-#define FLAGS_ALU_T_R_SD (FLAGS_ALU_T_R_D | IMF_ALU_REQ_RS)
-#define FLAGS_ALU_T_R_ST (IMF_SUPPORTED | IMF_ALU_REQ_RS | IMF_ALU_REQ_RT)
-
-#define FLAGS_ALU_TRAP_ST (IMF_SUPPORTED | IMF_ALU_REQ_RS | IMF_ALU_REQ_RT)
-#define FLAGS_ALU_TRAP_SI (IMF_SUPPORTED | IMF_ALU_REQ_RS | IMF_ALUSRC)
-
-#define FLAGS_J_B_PC_TO_R31 (IMF_SUPPORTED | IMF_PC_TO_R31 | IMF_REGWRITE)
-
-#define NOALU .alu = ALU_OP_SLL
-#define NOMEM .mem_ctl = AC_NONE
-
-#define IM_UNKNOWN {"UNKNOWN", Instruction::T_UNKNOWN, NOALU, NOMEM, nullptr, {}, 0, 0, 0}
-
 struct InstructionMap {
     const char *name;
     enum AluOp alu;
@@ -153,15 +100,40 @@ struct InstructionMap {
     unsigned int flags;
 };
 
-const std::int32_t instruction_map_opcode_field = IMF_SUB_ENCODE(6, 26);
-
 // This table is indexed by opcode
-static const struct InstructionMap instruction_map[] = {
-    {"J",      NOALU, NOMEM, {"a"}, 0x08000000, 0xfc000000,         // J
-     .flags = IMF_SUPPORTED | IMF_JUMP},
-};
+// last n-bits with set values defines size of instruction set
+// r-type map - 0-6 opcode, 7 - 11 rd, 12-14 func3, 15 - 19 rs1, 20-24 rs2, 25 - 31 func7
+// i-type map - 0-6 opcode, 7 - 11 rd, 12-14 func3, 15 - 19 rs1, 20 - 31 imm
+// s-type map - 0-6 opcode, 7 - 11 im, 12-14 func3, 15 - 19 rs1, 20-24 rs2, 25 - 31 imm
+// b-type map - 0-6 opcode, 7     imm,  8-11 imm  , 12-14 func3, 15 - 19 rs1, 20-24 rs2, 25 - 30 imm, 31 imm
+// u-type map - 0-6 opcode, 7 - 11 rd, 12 - 31 imm
+// j-type map - 0-6 opcode, 7 - 11 rd, 12 - 19 imm, 20 - 30 imm, 31 im
+#define RTYPE_OPCODE_MASK 0b11111110000000000111000001111111
+#define BTYPE_OPCODE_MASK 0b00000000000000000111000001111111
+#define ITYPE_OPCODE_MASK BTYPE_OPCODE_MASK
+#define STYPE_OPCODE_MASK BTYPE_OPCODE_MASK
+#define UTYPE_OPCODE_MASK 0b00000000000000000000000001111111
+#define JTYPE_OPCODE_MASK UTYPE_OPCODE_MASK
+
+#define OPCODE_LUI      0b00000000000000000000000000110111
+#define OPCODE_LUI_MASK UTYPE_OPCODE_MASK
+#define OPCODE_AUIPC      0b00000000000000000000000000010111
+#define OPCODE_AUIPC_MASK UTYPE_OPCODE_MASK
+#define OPCODE_JAL      0b00000000000000000000000000110111
+#define OPCODE_JAL_MASK UTYPE_OPCODE_MASK
+const std::map<uint32_t, Instruction> instruction_set = {};
+//     {OPCODE_LUI, {"LUI", ALU_OP_SLL, AC_NONE, NULL, 0, 0, 0} },
+// };
 
 static inline const struct InstructionMap &InstructionMapFind(std::uint32_t code) {
+    // order dependnet, the biggest mask goes first
+    if (instruction_set.count(code & RTYPE_OPCODE_MASK))
+        return instruction_set[code & RTYPE_OPCODE_MASK];
+    if (instruction_set.count(code & BTYPE_OPCODE_MASK))
+        return instruction_set[code & BTYPE_OPCODE_MASK];
+    if (instruction_set.count(code & UTYPE_OPCODE_MASK))
+        return instruction_set[code & UTYPE_OPCODE_MASK];
+    return NULL;
 }
 
 Instruction::Instruction() {
@@ -283,12 +255,12 @@ void instruction_from_string_build_base(const InstructionMap *im = nullptr,
     std::uint32_t code;
 
     if (im == nullptr) {
-        im = instruction_map;
-        flags = instruction_map_opcode_field;
+        im = NULL;
+        flags = 0;
         base_code = 0;
     }
-    unsigned int bits = IMF_SUB_GET_BITS(flags);
-    unsigned int shift = IMF_SUB_GET_SHIFT(flags);
+    unsigned int bits = 0;
+    unsigned int shift = 0;
 
     for (unsigned int i = 0; i < 1U << bits; i++, im++) {
         code = base_code | (i << shift);
