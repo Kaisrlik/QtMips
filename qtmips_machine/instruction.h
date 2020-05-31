@@ -116,13 +116,6 @@ public:
     Instruction(std::uint8_t opcode, std::uint32_t address); // Type J
     Instruction(const Instruction&);
 
-    enum Type {
-        T_R,
-        T_I,
-        T_J,
-        T_UNKNOWN
-    };
-
     std::uint8_t opcode() const;
     std::uint8_t rs() const;
     std::uint8_t rt() const;
@@ -133,16 +126,10 @@ public:
     std::uint16_t immediate() const;
     std::uint32_t address() const;
     std::uint32_t data() const;
-    enum Type type() const;
-    enum InstructionFlags flags() const;
-    enum AluOp alu_op() const;
-    enum AccessControl mem_ctl() const;
     enum ExceptionCause encoded_exception() const;
 
     void flags_alu_op_mem_ctl(enum InstructionFlags &flags,
                   enum AluOp &alu_op, enum AccessControl &mem_ctl) const;
-
-    bool is_break() const;
 
     bool operator==(const Instruction &c) const;
     bool operator!=(const Instruction &c) const;

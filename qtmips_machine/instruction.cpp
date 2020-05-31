@@ -145,137 +145,23 @@ const RegisterDesc regbycode[] = {
 
 struct InstructionMap {
     const char *name;
-    enum Instruction::Type type;
     enum AluOp alu;
     enum AccessControl mem_ctl;
-    const struct InstructionMap *subclass; // when subclass is used then flags has special meaning
     const QStringList args;
     std::uint32_t code;
     std::uint32_t mask;
     unsigned int flags;
 };
 
-#define IT_R Instruction::T_R
-#define IT_I Instruction::T_I
-#define IT_J Instruction::T_J
-
 const std::int32_t instruction_map_opcode_field = IMF_SUB_ENCODE(6, 26);
 
 // This table is indexed by opcode
 static const struct InstructionMap instruction_map[] = {
-    {"J",      IT_J, NOALU, NOMEM, nullptr, {"a"}, 0x08000000, 0xfc000000,         // J
+    {"J",      NOALU, NOMEM, {"a"}, 0x08000000, 0xfc000000,         // J
      .flags = IMF_SUPPORTED | IMF_JUMP},
-    {"JAL",    IT_J, ALU_OP_PASS_T, NOMEM, nullptr, {"a"}, 0x0c000000, 0xfc000000,  // JAL
-     .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP},
-    {"BEQ",    IT_I, NOALU, NOMEM, nullptr, {"s", "t", "p"}, 0x10000000, 0xfc000000,         // BEQ
-     .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BJR_REQ_RT | IMF_BRANCH},
-    {"BNE",    IT_I, NOALU, NOMEM, nullptr, {"s", "t", "p"}, 0x14000000, 0xfc000000,          // BNE
-     .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BJR_REQ_RT | IMF_BRANCH | IMF_BJ_NOT},
-    {"BLEZ",   IT_I, NOALU, NOMEM, nullptr, {"s", "p"}, 0x18000000, 0xfc1f0000,          // BLEZ
-     .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BRANCH | IMF_BGTZ_BLEZ},
-    {"BGTZ",   IT_I, NOALU, NOMEM, nullptr, {"s", "p"}, 0x1c000000, 0xfc1f0000,          // BGTZ
-     .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BRANCH | IMF_BGTZ_BLEZ | IMF_BJ_NOT},
-    {"ADDI",   IT_I, ALU_OP_ADD, NOMEM, nullptr, {"t", "r", "j"}, 0x20000000, 0xfc000000,     // ADDI
-     .flags = FLAGS_ALU_I},
-    {"ADDIU",  IT_I, ALU_OP_ADDU, NOMEM, nullptr, {"t", "r", "j"}, 0x24000000, 0xfc000000,    // ADDIU
-     .flags = FLAGS_ALU_I},
-    {"SLTI",   IT_I, ALU_OP_SLT, NOMEM, nullptr, {"t", "r", "j"}, 0x28000000, 0xfc000000,     // SLTI
-     .flags = FLAGS_ALU_I},
-    {"SLTIU",  IT_I, ALU_OP_SLTU, NOMEM, nullptr, {"t", "r", "j"}, 0x2c000000, 0xfc000000,    // SLTIU
-     .flags = FLAGS_ALU_I},
-    {"ANDI",   IT_I, ALU_OP_AND, NOMEM, nullptr, {"t", "r", "i"}, 0x30000000, 0xfc000000,     // ANDI
-     .flags = FLAGS_ALU_I_ZE},
-    {"ORI",    IT_I, ALU_OP_OR, NOMEM, nullptr, {"t", "r", "i"}, 0x34000000, 0xfc000000,      // ORI
-     .flags = FLAGS_ALU_I_ZE},
-    {"XORI",   IT_I, ALU_OP_XOR, NOMEM, nullptr, {"t", "r", "i"}, 0x38000000, 0xfc000000,     // XORI
-     .flags = FLAGS_ALU_I_ZE},
-    {"LUI",    IT_I, ALU_OP_LUI, NOMEM, nullptr, {"t", "u"}, 0x3c000000, 0xffe00000,     // LUI
-     .flags = FLAGS_ALU_I_NO_RS},
-    IM_UNKNOWN,  // 17
-    IM_UNKNOWN,  // 18
-    IM_UNKNOWN,  // 19
-    {"BEQL",    IT_I, NOALU, NOMEM, nullptr, {"s", "t", "p"}, 0x50000000, 0xfc000000,         // BEQL
-     .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BJR_REQ_RT | IMF_BRANCH | IMF_NB_SKIP_DS},
-    {"BNEL",    IT_I, NOALU, NOMEM, nullptr, {"s", "t", "p"}, 0x54000000, 0xfc000000,         // BNEL
-     .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BJR_REQ_RT | IMF_BRANCH | IMF_NB_SKIP_DS | IMF_BJ_NOT},
-    {"BLEZL",   IT_I, NOALU, NOMEM, nullptr, {"s", "p"}, 0x58000000, 0xfc1f0000,         // BLEZL
-     .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BRANCH | IMF_NB_SKIP_DS | IMF_BGTZ_BLEZ},
-    {"BGTZL",   IT_I, NOALU, NOMEM, nullptr, {"s", "p"}, 0x5c000000, 0xfc1f0000,         // BGTZL
-     .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BRANCH | IMF_NB_SKIP_DS | IMF_BGTZ_BLEZ | IMF_BJ_NOT},
-    IM_UNKNOWN,  // 24
-    IM_UNKNOWN,  // 25
-    IM_UNKNOWN,  // 26
-    IM_UNKNOWN,  // 27
-    IM_UNKNOWN,  // 29
-    IM_UNKNOWN,  // 30
-    {"LB",     IT_I, ALU_OP_ADDU, AC_BYTE, nullptr, {"t", "o(b)"}, 0x80000000, 0xfc000000,  // LB
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LH",     IT_I, ALU_OP_ADDU, AC_HALFWORD, nullptr, {"t", "o(b)"}, 0x84000000, 0xfc000000,  // LH
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LWL",    IT_I, ALU_OP_ADDU, AC_WORD_LEFT, nullptr, {"t", "o(b)"}, 0x88000000, 0xfc000000,    // LWL - unsupported
-     .flags = FLAGS_ALU_I_LOAD | IMF_ALU_REQ_RT},
-    {"LW",     IT_I, ALU_OP_ADDU, AC_WORD, nullptr, {"t", "o(b)"}, 0x8c000000, 0xfc000000,  // LW
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LBU",    IT_I, ALU_OP_ADDU, AC_BYTE_UNSIGNED, nullptr, {"t", "o(b)"}, 0x90000000, 0xfc000000,  // LBU
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LHU",    IT_I, ALU_OP_ADDU, AC_HALFWORD_UNSIGNED, nullptr, {"t", "o(b)"}, 0x94000000, 0xfc000000,   // LHU
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LWR",    IT_I, ALU_OP_ADDU, AC_WORD_RIGHT, nullptr, {"t", "o(b)"}, 0x98000000, 0xfc000000,    // LWR - unsupported
-     .flags = FLAGS_ALU_I_LOAD | IMF_ALU_REQ_RT},
-    IM_UNKNOWN,  // 39
-    {"SB",     IT_I, ALU_OP_ADDU, AC_BYTE, nullptr, {"t", "o(b)"}, 0xa0000000, 0xfc000000,  // SB
-     .flags = FLAGS_ALU_I_STORE},
-    {"SH",     IT_I, ALU_OP_ADDU, AC_HALFWORD, nullptr, {"t", "o(b)"}, 0xa4000000, 0xfc000000,   // SH
-     .flags = FLAGS_ALU_I_STORE},
-    {"SWL",    IT_I, ALU_OP_ADDU, AC_WORD_LEFT, nullptr, {"t", "o(b)"}, 0xa8000000, 0xfc000000,    // SWL
-     .flags = FLAGS_ALU_I_STORE},
-    {"SW",     IT_I, ALU_OP_ADDU, AC_WORD, nullptr, {"t", "o(b)"}, 0xac000000, 0xfc000000,  // SW
-     .flags = FLAGS_ALU_I_STORE},
-    IM_UNKNOWN,  // 44
-    IM_UNKNOWN,  // 45
-    {"SWR",    IT_I, ALU_OP_ADDU, AC_WORD_RIGHT, nullptr, {"t", "o(b)"}, 0xb8000000, 0xfc000000,    // SWR
-     .flags = FLAGS_ALU_I_STORE},
-    {"CACHE",  IT_I, ALU_OP_ADDU, AC_CACHE_OP, nullptr, {"k", "o(b)"}, 0xbc000000, 0xfc000000, // CACHE
-     .flags = IMF_SUPPORTED | IMF_ALUSRC | IMF_MEM},
-    {"LL",     IT_I, ALU_OP_ADDU, AC_LOAD_LINKED, nullptr, {"t", "o(b)"}, 0xc0000000, 0xfc000000,  // LL
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LWC1", IT_I, NOALU, NOMEM, nullptr, {"T", "o(b)"}, 0xc4000000, 0xfc000000,
-     .flags = IMF_SUPPORTED},
-    IM_UNKNOWN,  // 50
-    {"PREF", IT_I, NOALU, NOMEM, nullptr, {"k", "o(b)"}, 0xcc000000, 0xfc000000,            // PREF
-     .flags = IMF_SUPPORTED},
-    IM_UNKNOWN,  // 52
-    {"LWD1", IT_I, NOALU, NOMEM, nullptr, {"T", "o(b)"}, 0xd4000000, 0xfc000000,
-     .flags = IMF_SUPPORTED},
-    IM_UNKNOWN,  // 54
-    IM_UNKNOWN,  // 55
-    {"SC",     IT_I, ALU_OP_ADDU, AC_STORE_CONDITIONAL, nullptr, {"t", "o(b)"}, 0xe0000000, 0xfc000000,  // SW
-     .flags = FLAGS_ALU_I_STORE | IMF_MEMREAD | IMF_REGWRITE},
-    {"SWC1", IT_I, NOALU, NOMEM, nullptr, {"T", "o(b)"}, 0xe4000000, 0xfc000000,
-     .flags = IMF_SUPPORTED},
-    IM_UNKNOWN,  // 58
-    IM_UNKNOWN,  // 59
-    IM_UNKNOWN,  // 60
-    {"SDC1", IT_I, NOALU, NOMEM, nullptr, {"T", "o(b)"}, 0xf4000000, 0xfc000000,
-     .flags = IMF_SUPPORTED},
-    IM_UNKNOWN,  // 62
-    IM_UNKNOWN,  // 63
 };
 
-#undef IM_UNKNOWN
-
 static inline const struct InstructionMap &InstructionMapFind(std::uint32_t code) {
-    const struct InstructionMap *im = instruction_map;
-    std::uint32_t flags = instruction_map_opcode_field;
-    do {
-        unsigned int bits = IMF_SUB_GET_BITS(flags);
-        unsigned int shift = IMF_SUB_GET_SHIFT(flags);
-        im = im + ((code >> shift) & ((1 << bits) - 1));
-        if (im->subclass == nullptr)
-            return *im;
-        flags = im->flags;
-        im = im->subclass;
-    } while(1);
 }
 
 Instruction::Instruction() {
@@ -314,97 +200,54 @@ Instruction::Instruction(const Instruction &i) {
     this->dt = i.data();
 }
 
-#define MASK(LEN,OFF) ((this->dt >> (OFF)) & ((1 << (LEN)) - 1))
-
 std::uint8_t Instruction::opcode() const {
-    return (std::uint8_t) MASK(6, 26);
+    return 0;
 }
 
 std::uint8_t Instruction::rs() const {
-    return (std::uint8_t) MASK(5, RS_SHIFT);
+    return 0;
 }
 
 std::uint8_t Instruction::rt() const {
-    return (std::uint8_t) MASK(5, RT_SHIFT);
+    return 0;
 }
 
 std::uint8_t Instruction::rd() const {
-    return (std::uint8_t) MASK(5, RD_SHIFT);
+    return 0;
 }
 
 std::uint8_t Instruction::shamt() const {
-    return (std::uint8_t) MASK(5, SHAMT_SHIFT);
-
+    return 0;
 }
 
 std::uint8_t Instruction::funct() const {
-    return (std::uint8_t) MASK(6, 0);
+    return 0;
 }
 
 std::uint8_t Instruction::cop0sel() const {
-    return (std::uint8_t) MASK(3, 0);
+    return 0;
 }
 
 std::uint16_t Instruction::immediate() const {
-    return (std::uint16_t) MASK(16, 0);
+    return 0;
 }
 
 std::uint32_t Instruction::address() const {
-    return (std::uint32_t) MASK(26, 0);
+    return 0;
 }
 
 std::uint32_t Instruction::data() const {
-    return this->dt;
+    return 0;
 }
 
-enum Instruction::Type Instruction::type() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    return im.type;
-}
-
-enum InstructionFlags Instruction::flags() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    return (enum InstructionFlags)im.flags;
-}
-enum AluOp Instruction::alu_op() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    return im.alu;
-}
-
-enum AccessControl Instruction::mem_ctl() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    return im.mem_ctl;
-}
 
 void Instruction::flags_alu_op_mem_ctl(enum InstructionFlags &flags,
                   enum AluOp &alu_op, enum AccessControl &mem_ctl) const {
     const struct InstructionMap &im = InstructionMapFind(dt);
-    flags = (enum InstructionFlags)im.flags;
-    alu_op = im.alu;
-    mem_ctl = im.mem_ctl;
-   #if 1
-    if ((dt ^ im.code) & (im.mask))
-        flags = (enum InstructionFlags)(flags & ~IMF_SUPPORTED);
-   #endif
 }
 
 enum ExceptionCause Instruction::encoded_exception() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    if (!(im.flags & IMF_EXCEPTION))
-        return EXCAUSE_NONE;
-    switch (im.alu) {
-        case ALU_OP_BREAK:
-            return EXCAUSE_BREAK;
-        case ALU_OP_SYSCALL:
-            return EXCAUSE_SYSCALL;
-        default:
-            return EXCAUSE_NONE;
-    }
-}
-
-bool Instruction::is_break() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    return im.alu == ALU_OP_BREAK;
+    return EXCAUSE_NONE;
 }
 
 bool Instruction::operator==(const Instruction &c) const {
@@ -428,8 +271,6 @@ QString Instruction::to_str(std::int32_t inst_addr) const {
         return QString("NOP");
     QString res;
     QString next_delim = " ";
-    if (im.type == T_UNKNOWN)
-        return QString("UNKNOWN");
 
     res += im.name;
     return res;
@@ -451,10 +292,6 @@ void instruction_from_string_build_base(const InstructionMap *im = nullptr,
 
     for (unsigned int i = 0; i < 1U << bits; i++, im++) {
         code = base_code | (i << shift);
-        if (im->subclass) {
-            instruction_from_string_build_base(im->subclass, im->flags, code);
-            continue;
-        }
         if (!(im->flags & IMF_SUPPORTED))
             continue;
         if (im->code != code) {
