@@ -94,15 +94,10 @@ struct RegisterDesc {
 #define UTYPE_RD_SHIFT    20
 #define UTYPE_IMM_MASK    __bswap_32(0b11111111111111111111000000000000)
 
-#define OPCODE_LUI   __bswap_32(0b00000000000000000000000000110111)
-#define OPCODE_LUI_MASK UTYPE_OPCODE_MASK
-#define OPCODE_AUIPC __bswap_32(0b00000000000000000000000000010111)
-#define OPCODE_AUIPC_MASK UTYPE_OPCODE_MASK
-#define OPCODE_JAL   __bswap_32(0b00000000000000000000000000110111)
-#define OPCODE_JAL_MASK UTYPE_OPCODE_MASK
+#include "arch/riscv/include/riscv_insc.h"
 
 const std::map<uint32_t, InstructionMap> instruction_set = {
-    {OPCODE_LUI, {"LUI", ALU_OP_SLL, AC_NONE, {}, 0, 0, IMF_SUPPORTED | IMF_ALUSRC | IMF_REGWRITE} },
+    {LUI_OPCODE, {"LUI", ALU_OP_SLL, AC_NONE, {}, 0, 0, IMF_SUPPORTED | IMF_ALUSRC | IMF_REGWRITE} },
     // NOP does not exist in ISA - it is replaced by ADDI x0,x0,0
     {0, {"NOP", ALU_OP_SLL, AC_NONE, {}, 0, 0, IMF_SUPPORTED | IMF_ALUSRC} },
 };
