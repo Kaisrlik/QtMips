@@ -107,13 +107,20 @@ struct RelocExpression {
 
 typedef QVector<RelocExpression *> RelocExpressionList;
 
+struct InstructionMap {
+    const char *name;
+    enum AluOp alu;
+    enum AccessControl mem_ctl;
+    const QStringList args;
+    std::uint32_t code;
+    std::uint32_t mask;
+    unsigned int flags;
+};
+
 class Instruction {
 public:
     Instruction();
     Instruction(std::uint32_t inst);
-    Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint8_t rd, std::uint8_t shamt, std::uint8_t funct); // Type R
-    Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint16_t immediate); // Type I
-    Instruction(std::uint8_t opcode, std::uint32_t address); // Type J
     Instruction(const Instruction&);
 
     std::uint8_t opcode() const;
@@ -155,6 +162,7 @@ public:
     static void append_recognized_registers(QStringList &list);
 private:
     std::uint32_t dt;
+    const InstructionMap * current_instruction;
 };
 
 }

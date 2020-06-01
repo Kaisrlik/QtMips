@@ -54,52 +54,6 @@ struct RegisterDesc {
     int number;
     const char *name;
 };
-
-const RegisterDesc regbycode[] = {
-    [0] = {0, 0, "zero"},
-    [1] = {0, 1, "at"},
-    [2] = {0, 2, "v0"},
-    [3] = {0, 3, "v1"},
-    [4] = {0, 4, "a0"},
-    [5] = {0, 5, "a1"},
-    [6] = {0, 6, "a2"},
-    [7] = {0, 7, "a3"},
-    [8] = {0, 8, "t0"},
-    [9] = {0, 9, "t1"},
-    [10] = {0, 10, "t2"},
-    [11] = {0, 11, "t3"},
-    [12] = {0, 12, "t4"},
-    [13] = {0, 13, "t5"},
-    [14] = {0, 14, "t6"},
-    [15] = {0, 15, "t7"},
-    [16] = {0, 16, "s0"},
-    [17] = {0, 17, "s1"},
-    [18] = {0, 18, "s2"},
-    [19] = {0, 19, "s3"},
-    [20] = {0, 20, "s4"},
-    [21] = {0, 21, "s5"},
-    [22] = {0, 22, "s6"},
-    [23] = {0, 23, "s7"},
-    [24] = {0, 24, "t8"},
-    [25] = {0, 25, "t9"},
-    [26] = {0, 26, "k0"},
-    [27] = {0, 27, "k1"},
-    [28] = {0, 28, "gp"},
-    [29] = {0, 29, "sp"},
-    [30] = {0, 30, "s8"},
-    [31] = {0, 31, "ra"},
-};
-
-struct InstructionMap {
-    const char *name;
-    enum AluOp alu;
-    enum AccessControl mem_ctl;
-    const QStringList args;
-    std::uint32_t code;
-    std::uint32_t mask;
-    unsigned int flags;
-};
-
 // This table is indexed by opcode
 // last n-bits with set values defines size of instruction set
 // r-type map - 0-6 opcode, 7 - 11 rd, 12-14 func3, 15 - 19 rs1, 20-24 rs2, 25 - 31 func7
@@ -108,68 +62,61 @@ struct InstructionMap {
 // b-type map - 0-6 opcode, 7     imm,  8-11 imm  , 12-14 func3, 15 - 19 rs1, 20-24 rs2, 25 - 30 imm, 31 imm
 // u-type map - 0-6 opcode, 7 - 11 rd, 12 - 31 imm
 // j-type map - 0-6 opcode, 7 - 11 rd, 12 - 19 imm, 20 - 30 imm, 31 im
-#define RTYPE_OPCODE_MASK 0b11111110000000000111000001111111
-#define BTYPE_OPCODE_MASK 0b00000000000000000111000001111111
+// Mask is probably wrong
+#include <byteswap.h>
+// using same bitorder as described in ISA, so it means we have to change
+// bitorder everywhere :(
+#define RTYPE_OPCODE_MASK __bswap_32(0b11111110000000000111000001111111)
+#define BTYPE_OPCODE_MASK __bswap_32(0b00000000000000000111000001111111)
 #define ITYPE_OPCODE_MASK BTYPE_OPCODE_MASK
 #define STYPE_OPCODE_MASK BTYPE_OPCODE_MASK
-#define UTYPE_OPCODE_MASK 0b00000000000000000000000001111111
+#define UTYPE_OPCODE_MASK __bswap_32(0b00000000000000000000000001111111)
 #define JTYPE_OPCODE_MASK UTYPE_OPCODE_MASK
 
-#define OPCODE_LUI      0b00000000000000000000000000110111
-#define OPCODE_LUI_MASK UTYPE_OPCODE_MASK
-#define OPCODE_AUIPC      0b00000000000000000000000000010111
-#define OPCODE_AUIPC_MASK UTYPE_OPCODE_MASK
-#define OPCODE_JAL      0b00000000000000000000000000110111
-#define OPCODE_JAL_MASK UTYPE_OPCODE_MASK
-const std::map<uint32_t, Instruction> instruction_set = {};
-//     {OPCODE_LUI, {"LUI", ALU_OP_SLL, AC_NONE, NULL, 0, 0, 0} },
-// };
+#define UTYPE_RD_MASK     __bswap_32(0b00000000000000000000111110000000)
+#define UTYPE_RD_SHIFT    20
+#define UTYPE_IMM_MASK    __bswap_32(0b11111111111111111111000000000000)
 
-static inline const struct InstructionMap &InstructionMapFind(std::uint32_t code) {
+#define OPCODE_LUI   __bswap_32(0b00000000000000000000000000110111)
+#define OPCODE_LUI_MASK UTYPE_OPCODE_MASK
+#define OPCODE_AUIPC __bswap_32(0b00000000000000000000000000010111)
+#define OPCODE_AUIPC_MASK UTYPE_OPCODE_MASK
+#define OPCODE_JAL   __bswap_32(0b00000000000000000000000000110111)
+#define OPCODE_JAL_MASK UTYPE_OPCODE_MASK
+
+const std::map<uint32_t, InstructionMap> instruction_set = {
+    {OPCODE_LUI, {"LUI", ALU_OP_SLL, AC_NONE, {}, 0, 0, IMF_SUPPORTED | IMF_ALUSRC | IMF_REGWRITE} },
+    // NOP does not exist in ISA - it is replaced by ADDI x0,x0,0
+    {0, {"NOP", ALU_OP_SLL, AC_NONE, {}, 0, 0, IMF_SUPPORTED | IMF_ALUSRC} },
+};
+const InstructionMap IM_UNKNOWN = {"UNKNOWN", ALU_OP_SLL, AC_NONE, {}, 0, 0, 0};
+
+static inline const struct InstructionMap * InstructionMapFind(std::uint32_t code) {
     // order dependnet, the biggest mask goes first
     if (instruction_set.count(code & RTYPE_OPCODE_MASK))
-        return instruction_set[code & RTYPE_OPCODE_MASK];
+        return &instruction_set.at(code & RTYPE_OPCODE_MASK);
     if (instruction_set.count(code & BTYPE_OPCODE_MASK))
-        return instruction_set[code & BTYPE_OPCODE_MASK];
+        return &instruction_set.at(code & BTYPE_OPCODE_MASK);
     if (instruction_set.count(code & UTYPE_OPCODE_MASK))
-        return instruction_set[code & UTYPE_OPCODE_MASK];
-    return NULL;
+        return &instruction_set.at(code & UTYPE_OPCODE_MASK);
+    return &IM_UNKNOWN;
 }
 
 Instruction::Instruction() {
     this->dt = 0;
+    this->current_instruction = &IM_UNKNOWN;
 }
 
 Instruction::Instruction(std::uint32_t inst) {
     this->dt = inst;
-}
-
-Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint8_t rd, std::uint8_t shamt, std::uint8_t funct) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= rs << 21;
-    this->dt |= rt << 16;
-    this->dt |= rd << 11;
-    this->dt |= shamt << 6;
-    this->dt |= funct;
-}
-
-Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint16_t immediate) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= rs << 21;
-    this->dt |= rt << 16;
-    this->dt |= immediate;
-}
-
-Instruction::Instruction(std::uint8_t opcode, std::uint32_t address) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= address;
+    this->current_instruction = InstructionMapFind(this->dt);
+    printf("%s:%s:%d: Instruction 0x%08x (%s) created. \n", __FILE__, __func__, __LINE__,
+            this->dt, this->current_instruction->name);
 }
 
 Instruction::Instruction(const Instruction &i) {
     this->dt = i.data();
+    this->current_instruction = InstructionMapFind(this->dt);
 }
 
 std::uint8_t Instruction::opcode() const {
@@ -209,13 +156,15 @@ std::uint32_t Instruction::address() const {
 }
 
 std::uint32_t Instruction::data() const {
-    return 0;
+    return this->dt;
 }
 
-
+// get flags, alu op, and memctl
 void Instruction::flags_alu_op_mem_ctl(enum InstructionFlags &flags,
                   enum AluOp &alu_op, enum AccessControl &mem_ctl) const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
+    flags = (enum InstructionFlags)this->current_instruction->flags;
+    alu_op = this->current_instruction->alu;
+    mem_ctl = this->current_instruction->mem_ctl;
 }
 
 enum ExceptionCause Instruction::encoded_exception() const {
@@ -237,49 +186,24 @@ Instruction &Instruction::operator=(const Instruction &c) {
 }
 
 QString Instruction::to_str(std::int32_t inst_addr) const {
-    const InstructionMap &im = InstructionMapFind(dt);
-    // TODO there are exception where some fields are zero and such so we should not print them in such case
-    if (dt == 0)
-        return QString("NOP");
+    (void) inst_addr; //unused
+    const InstructionMap * im = this->current_instruction;
     QString res;
-    QString next_delim = " ";
-
-    res += im.name;
+    res += im->name;
+    // TODO: maybe it is possible to use library able to convert machine code to
+    // asm.  and laso i would like to move it to common place to have same
+    // parsig(printing) function
+    if (instruction_set.count(this->dt & RTYPE_OPCODE_MASK))
+        res += "";
+    if (instruction_set.count(this->dt & BTYPE_OPCODE_MASK))
+        res += "";
+    if (instruction_set.count(this->dt & UTYPE_OPCODE_MASK))
+        res += " $" + QString::number((this->dt & UTYPE_RD_MASK) >> UTYPE_RD_SHIFT) 
+            + ", $" + QString::number(this->dt & UTYPE_IMM_MASK);
     return res;
 }
 
 QMultiMap<QString, std::uint32_t> str_to_instruction_code_map;
-
-void instruction_from_string_build_base(const InstructionMap *im = nullptr,
-                    unsigned int flags = 0, std::uint32_t base_code = 0) {
-    std::uint32_t code;
-
-    if (im == nullptr) {
-        im = NULL;
-        flags = 0;
-        base_code = 0;
-    }
-    unsigned int bits = 0;
-    unsigned int shift = 0;
-
-    for (unsigned int i = 0; i < 1U << bits; i++, im++) {
-        code = base_code | (i << shift);
-        if (!(im->flags & IMF_SUPPORTED))
-            continue;
-        if (im->code != code) {
-#if 0
-            printf("code mitchmatch %s computed 0x%08x found 0x%08x\n", im->name, code, im->code);
-#endif
-            continue;
-        }
-        str_to_instruction_code_map.insert(im->name, code);
-    }
-#if 0
-    for (auto i = str_to_instruction_code_map.begin();
-         i != str_to_instruction_code_map.end(); i++)
-        std::cout << i.key().toStdString() << ' ';
-#endif
-}
 
 static int parse_reg_from_string(QString str, uint *chars_taken = nullptr)
 {
@@ -297,13 +221,6 @@ static int parse_reg_from_string(QString str, uint *chars_taken = nullptr)
             k++;
         }
         str = str.mid(1, k-1);
-        for (i = 0 ; i < sizeof(regbycode); i++) {
-            if (str == regbycode[i].name) {
-                if (chars_taken != nullptr)
-                   *chars_taken = k;
-                return regbycode[i].number;
-            }
-        }
         return -1;
     }
 
@@ -331,59 +248,7 @@ ssize_t Instruction::code_from_string(std::uint32_t *code, size_t buffsize,
                        std::uint32_t inst_addr, RelocExpressionList *reloc,
                        QString filename, int line, bool pseudo_opt, int options)
 {
-    const char *err = "unknown instruction";
-    if (str_to_instruction_code_map.isEmpty())
-        instruction_from_string_build_base();
-
-    int field = 0;
-    std::uint32_t inst_code = 0;
-    auto i = str_to_instruction_code_map.lowerBound(inst_base);
-    for (; ; i++) {
-        if (i == str_to_instruction_code_map.end())
-            break;
-        if (i.key() != inst_base)
-            break;
-        inst_code = i.value();
-        const InstructionMap &im = InstructionMapFind(inst_code);
-
-        field = 0;
-        if (field != inst_fields.count())
-            continue;
-
-        if (buffsize >= 4)
-            *code = inst_code;
-        return 4;
-    }
-
-    ssize_t ret = -1;
-    inst_code = 0;
-    if ((inst_base == "NOP") && (inst_fields.size() == 0)) {
-        inst_code = 0;
-        ret = 4;
-    } else if (pseudo_opt) {
-        if (((inst_base == "LA") || (inst_base == "LI")) && (inst_fields.size() == 2)) {
-            if(code_from_string(code, buffsize, "LUI", inst_fields, error,
-                             inst_addr, reloc, filename, line, false,
-                             CFS_OPTION_SILENT_MASK + 16) < 0) {
-                error = QString("error in LUI element of " + inst_base);
-                return -1;
-            }
-            inst_fields.insert(1, inst_fields.at(0));
-            if (code_from_string(code + 1, buffsize - 4, "ORI", inst_fields, error,
-                             inst_addr + 4, reloc, filename, line, false,
-                             CFS_OPTION_SILENT_MASK + 0) < 0) {
-                error = QString("error in ORI element of " + inst_base);
-                return -1;
-            }
-            return 8;
-        }
-    }
-    if (buffsize >= 4)
-        *code = inst_code;
-    if (ret < 0) {
-        error = err;
-    }
-    return ret;
+    return 0;
 }
 
 ssize_t Instruction::code_from_string(std::uint32_t *code, size_t buffsize,
