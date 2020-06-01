@@ -832,6 +832,7 @@ static const struct InstructionMap instruction_map[] = {
 };
 
 #undef IM_UNKNOWN
+struct InstructionMap IM_UNKNOWN = {"UNKNOWN", T_UNKNOWN, NOALU, NOMEM, nullptr, "", 0, 0, 0};
 
 static inline const struct InstructionMap *InstructionMapFind(std::uint32_t code) {
     const struct InstructionMap *im = instruction_map;
@@ -849,7 +850,7 @@ static inline const struct InstructionMap *InstructionMapFind(std::uint32_t code
 
 Instruction::Instruction() {
     this->dt = 0;
-    this->im = InstructionMapFind(this->dt);
+    this->im = &IM_UNKNOWN;
 }
 
 Instruction::Instruction(std::uint32_t inst) {
@@ -909,7 +910,6 @@ std::uint8_t Instruction::rd() const {
 
 std::uint8_t Instruction::shamt() const {
     return (std::uint8_t) MASK(5, SHAMT_SHIFT);
-
 }
 
 std::uint8_t Instruction::funct() const {
@@ -984,8 +984,10 @@ bool Instruction::operator!=(const Instruction &c) const {
 }
 
 Instruction &Instruction::operator=(const Instruction &c) {
-    if (this != &c)
+    if (this != &c) {
         this->dt = c.data();
+        this->im = InstructionMapFind(this->dt);
+    }
     return *this;
 }
 
