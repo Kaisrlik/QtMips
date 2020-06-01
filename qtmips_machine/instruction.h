@@ -120,7 +120,7 @@ struct InstructionMap {
     enum AluOp alu;
     enum AccessControl mem_ctl;
     const struct InstructionMap *subclass; // when subclass is used then flags has special meaning
-    const QStringList args;
+    const char * args;
     std::uint32_t code;
     std::uint32_t mask;
     unsigned int flags;
