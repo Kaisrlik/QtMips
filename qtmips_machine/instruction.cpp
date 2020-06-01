@@ -153,6 +153,8 @@ void format_impl(std::stringstream& ss, const char* format, uint32_t x) {
                 case 'z' : // must be zero register
                     s = 0;
                     break;
+                default:
+                    assert("Wrong format_impl parametr");
             }
             ss << s;
             return format_impl(ss, ++format, x); // one arg less
@@ -164,6 +166,7 @@ void format_impl(std::stringstream& ss, const char* format, uint32_t x) {
 std::string format(const char* fmt, uint32_t x) {
     std::stringstream ss;
     format_impl(ss, fmt, x);
+    std::cout << ss.str() << std::endl;
     return ss.str();
 }
 

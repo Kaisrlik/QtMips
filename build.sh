@@ -13,3 +13,5 @@ make sub-qtmips_cli sub-qtmips_gui # Note: we are building these to to not build
 # Link executables to more suitable place
 ln -fs qtmips_cli/qtmips_cli cli
 ln -fs qtmips_gui/qtmips_gui gui
+cd $ROOT
+./build/cli ../apo_teaching/l6/example

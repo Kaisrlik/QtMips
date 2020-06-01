@@ -145,16 +145,16 @@ public:
     std::uint16_t immediate() const;
     std::uint32_t address() const;
     std::uint32_t data() const;
-    enum Type type() const;
-    enum InstructionFlags flags() const;
-    enum AluOp alu_op() const;
-    enum AccessControl mem_ctl() const;
+    enum Type type() const; //unused
+    enum InstructionFlags flags() const; //unused
+    enum AluOp alu_op() const; //unused
+    enum AccessControl mem_ctl() const; //unused
     enum ExceptionCause encoded_exception() const;
 
     void flags_alu_op_mem_ctl(enum InstructionFlags &flags,
                   enum AluOp &alu_op, enum AccessControl &mem_ctl) const;
 
-    bool is_break() const;
+    bool is_break() const; //unused
 
     bool operator==(const Instruction &c) const;
     bool operator!=(const Instruction &c) const;
