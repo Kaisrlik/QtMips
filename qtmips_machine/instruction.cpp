@@ -49,6 +49,23 @@
 
 using namespace machine;
 
+// // singleton
+// class Instruction_parser {
+//     public:
+//         static Instruction_parser& getInstance()
+//         {
+//             static Instruction_parser instance;
+//             return instance;
+//         }
+//     private:
+//         Instruction_parser() {}
+//         Instruction_parser(Instruction_parser const&); // Don't Implement
+//         void operator=(Instruction_parser const&); // Don't implement
+//     public:
+//         Instruction_parser(Instruction_parser const&) = delete;
+//         void operator=(Instruction_parser const&) = delete;
+// };
+
 struct RegisterDesc {
     int kind;
     int number;

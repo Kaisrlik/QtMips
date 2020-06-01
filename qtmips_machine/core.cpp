@@ -266,6 +266,7 @@ struct Core::dtFetch Core::fetch(bool skip_break) {
     enum ExceptionCause excause = EXCAUSE_NONE;
     std::uint32_t inst_addr = regs->read_pc();
     Instruction inst(mem_program->read_word(inst_addr));
+    printf("%s - mem[pc = 0x%x] = 0x%x\n", __func__, inst_addr, inst.data());
 
     if (!skip_break) {
         hwBreak *brk = hw_breaks.value(inst_addr);
@@ -699,11 +700,13 @@ void CoreSingle::do_step(bool skip_break) {
     bool branch_taken = false;
 
     struct dtFetch f = fetch(skip_break);
-    if (dt_f != nullptr) {
-        struct dtFetch f_swap = *dt_f;
-        *dt_f = f;
-        f = f_swap;
-    }
+// TODO: dont know why there is a swap
+//     if (dt_f != nullptr) {
+//         struct dtFetch f_swap = *dt_f;
+//         *dt_f = f;
+//         f = f_swap;
+//     }
+	printf("%s - f.inst = 0x%x\n", __func__, f.inst.data());
     struct dtDecode d = decode(f);
     struct dtExecute e = execute(d);
     struct dtMemory m = memory(e);
