@@ -107,8 +107,20 @@ struct RelocExpression {
 
 typedef QVector<RelocExpression *> RelocExpressionList;
 
+// TODO: reimplement with inique class with own parser
+enum Type {
+    T_R,
+    T_I,
+    T_J,
+    T_B,
+    T_S,
+    T_U,
+    T_UNKNOWN
+};
+
 struct InstructionMap {
     const char *name;
+    enum Type type;
     enum AluOp alu;
     enum AccessControl mem_ctl;
     const QStringList args;

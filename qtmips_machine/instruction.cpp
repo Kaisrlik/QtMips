@@ -97,11 +97,58 @@ struct RegisterDesc {
 #include "arch/riscv/include/riscv_insc.h"
 
 const std::map<uint32_t, InstructionMap> instruction_set = {
-    {LUI_OPCODE, {"LUI", ALU_OP_SLL, AC_NONE, {}, 0, 0, IMF_SUPPORTED | IMF_ALUSRC | IMF_REGWRITE} },
+    // RV32I Bae Instruction Set
+    {LUI_OPCODE,    {"LUI", LUI_TYPE, ALU_OP_LUI, AC_NONE, {}, 0, 0, IMF_SUPPORTED | IMF_ALUSRC | IMF_REGWRITE} },
+//     {AUIPC_OPCODE,  {"AUIPC", T_J, ALU_OP_UNKNOWN, AC_NONE, {}, 0, 0, IMF_NONE} },
+//     {JAL_OPCODE,    {"JAL", T_J, ALU_OP_PASS_T, NOMEM, {}, 0, 0, FLAGS_J_B_PC_TO_R31 | IMF_JUMP } },
+//     {JALR_OPCODE,   {"JALR", T_J, ALU_OP_PASS_T, NOMEM, {}, 0, 0, IMF_SUPPORTED | IMF_REGD | IMF_REGWRITE | IMF_BJR_REQ_RS | IMF_PC8_TO_RT | IMF_JUMP } },
+//     {BEQ_OPCODE,    {"BEQ", T_B, NOALU, NOMEM, {}, 0, 0, IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BJR_REQ_RT | IMF_BRANCH } },
+//     {BNE_OPCODE,    {"BNE", T_B, NOALU, NOMEM, {}, 0, 0, IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BJR_REQ_RT | IMF_BRANCH | IMF_BJ_NOT } },
+//     {BLT_OPCODE,    {"BLT", BLT_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {BGE_OPCODE,    {"BGE", BGE_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {BLTU_OPCODE,   {"BLTU", BLTU_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {BGEU_OPCODE,   {"BGEU", BGEU_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {LB_OPCODE,     {"LB", LB_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {LH_OPCODE,     {"LH", LH_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {LW_OPCODE,     {"LW", LW_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {LBU_OPCODE,    {"LBU", LBU_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {LHU_OPCODE,    {"LHU", LHU_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SB_OPCODE,     {"SB", SB_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SH_OPCODE,     {"SH", SH_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SW_OPCODE,     {"SW", SW_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+    {ADDI_OPCODE,   {"ADDI", T_I, ALU_OP_ADD, AC_NONE, {}, 0, 0, IMF_SUPPORTED | IMF_ALUSRC | IMF_REGWRITE | IMF_ALU_REQ_RS} },
+//     {SLTI_OPCODE,   {"SLTI", SLTI_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SLTIU_OPCODE,  {"SLTIU", SLTIU_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {XORI_OPCODE,   {"XORI", XORI_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {ORI_OPCODE,    {"ORI", ORI_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {ANDI_OPCODE,   {"ANDI", ANDI_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SLLI_OPCODE,   {"SLLI", SLLI_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SRLI_OPCODE,   {"SRLI", SRLI_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SRAI_OPCODE,   {"SRAI", SRAI_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {ADD_OPCODE,    {"ADD", ADD_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SUB_OPCODE,    {"SUB", SUB_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SLL_OPCODE,    {"SLL", SLL_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SLT_OPCODE,    {"SLT", SLT_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SLTU_OPCODE,   {"SLTU", SLTU_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {XOR_OPCODE,    {"XOR", XOR_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SRL_OPCODE,    {"SRL", SRL_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {SRA_OPCODE,    {"SRA", SRA_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {OR_OPCODE,     {"OR", OR_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {AND_OPCODE,    {"AND", AND_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {FENCE_OPCODE,  {"FENCE", FENCE_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {FENCEI_OPCODE, {"FENCEI", FENCEI_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {ECALL_OPCODE,  {"ECALL", ECALL_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {EBREAK_OPCODE, {"EBREAK", EBREAK_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {CSRRW_OPCODE,  {"CSRRW", CSRRW_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {CSRRS_OPCODE,  {"CSRRS", CSRRS_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {CSRRC_OPCODE,  {"CSRRC", CSRRC_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {CSRRWI_OPCODE, {"CSRRWI", CSRRWI_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {CSRRSI_OPCODE, {"CSRRSI", CSRRSI_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
+//     {CSRRCI_OPCODE, {"CSRRCI", CSRRCI_TYPE, , {}, 0, 0, IMF_SUPPORTED | } },
     // NOP does not exist in ISA - it is replaced by ADDI x0,x0,0
-    {0, {"NOP", ALU_OP_SLL, AC_NONE, {}, 0, 0, IMF_SUPPORTED | IMF_ALUSRC} },
+    {0, {"NOP", T_UNKNOWN, ALU_OP_SLL, AC_NONE, {}, 0, 0, IMF_SUPPORTED | IMF_ALUSRC} },
 };
-const InstructionMap IM_UNKNOWN = {"UNKNOWN", ALU_OP_SLL, AC_NONE, {}, 0, 0, 0};
+const InstructionMap IM_UNKNOWN = {"UNKNOWN", T_UNKNOWN, ALU_OP_SLL, AC_NONE, {}, 0, 0, 0};
 
 static inline const struct InstructionMap * InstructionMapFind(std::uint32_t code) {
     // order dependnet, the biggest mask goes first
