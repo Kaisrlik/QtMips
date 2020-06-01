@@ -5,7 +5,7 @@
 # Qt stuff
 *.pro.user*
 *.qbs.user*
-
+cscope.*
 # Common test directory
 test_dir
 # Build directory
