@@ -834,33 +834,6 @@ Instruction::Instruction(std::uint32_t inst) {
     this->im = InstructionMapFind(this->dt);
 }
 
-Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint8_t rd, std::uint8_t shamt, std::uint8_t funct) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= rs << 21;
-    this->dt |= rt << 16;
-    this->dt |= rd << 11;
-    this->dt |= shamt << 6;
-    this->dt |= funct;
-    this->im = InstructionMapFind(this->dt);
-}
-
-Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint16_t immediate) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= rs << 21;
-    this->dt |= rt << 16;
-    this->dt |= immediate;
-    this->im = InstructionMapFind(this->dt);
-}
-
-Instruction::Instruction(std::uint8_t opcode, std::uint32_t address) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= address;
-    this->im = InstructionMapFind(this->dt);
-}
-
 Instruction::Instruction(const Instruction &i) {
     this->dt = i.data();
     this->im = InstructionMapFind(this->dt);

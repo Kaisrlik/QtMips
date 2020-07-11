@@ -130,9 +130,6 @@ class Instruction {
 public:
     Instruction();
     Instruction(std::uint32_t inst);
-    Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint8_t rd, std::uint8_t shamt, std::uint8_t funct); // Type R
-    Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint16_t immediate); // Type I
-    Instruction(std::uint8_t opcode, std::uint32_t address); // Type J
     Instruction(const Instruction&);
 
     std::uint8_t opcode() const;
